@@ -13,41 +13,42 @@ public class AuctionTable implements Serializable{
     }
 
     public static AuctionTable buildFromURL(String URL) throws IllegalArgumentException {
-        // if(){
-        //     throw new IllegalArgumentException("The URL does not represent a valid datasource.");
-        // }
+        try{
+            DataSource ds = DataSource.connect(URL).load();
+            String[] auctionIDList = ds.fetchStringArray("listing/auction_info/id_num");
+            String[] bidList = ds.fetchStringArray("listing/auction_info/current_bid");
+            String[] sellerList = ds.fetchStringArray("listing/seller_info/seller_name");
+            String[] buyerList = ds.fetchStringArray("listing/auction_info/high_bidder/bidder_name");
+            String[] timeList = ds.fetchStringArray("listing/auction_info/time_left");
+            String[] memoryList = ds.fetchStringArray("listing/item_info/memory");
+            String[] cpuList = ds.fetchStringArray("listing/item_info/cpu");
+            String[] hard_driveList = ds.fetchStringArray("listing/item_info/hard_drive");
+            String[] itemInfoList = new String[memoryList.length];
 
-        DataSource ds = DataSource.connect(URL).load();
-        String[] auctionIDList = ds.fetchStringArray("listing/auction_info/id_num");
-        String[] bidList = ds.fetchStringArray("listing/auction_info/current_bid");
-        String[] sellerList = ds.fetchStringArray("listing/seller_info/seller_name");
-        String[] buyerList = ds.fetchStringArray("listing/auction_info/high_bidder/bidder_name");
-        String[] timeList = ds.fetchStringArray("listing/auction_info/time_left");
-        String[] memoryList = ds.fetchStringArray("listing/item_info/memory");
-        String[] cpuList = ds.fetchStringArray("listing/item_info/cpu");
-        String[] hard_driveList = ds.fetchStringArray("listing/item_info/hard_drive");
-        String[] itemInfoList = new String[memoryList.length];
+            HashMap<String, Auction> auctions = new HashMap<String, Auction>();
 
-        HashMap<String, Auction> auctions = new HashMap<String, Auction>();
+            for(int i = 0; i < memoryList.length; i++){
+                bidList[i] = bidList[i].replaceAll("[$,]", "");
+                buyerList[i] = buyerList[i].trim();
 
-        for(int i = 0; i < memoryList.length; i++){
-            bidList[i] = bidList[i].replaceAll("[$,]", "");
-            buyerList[i] = buyerList[i].trim();
+                String[] temp = timeList[i].split(" ");
+                if(temp[1].contains("days")){
+                    timeList[i] = "" + (Integer.parseInt(temp[0]) * 24 + Integer.parseInt(temp[2]));
+                }
 
-            String[] temp = timeList[i].split(" ");
-            if(temp[1].contains("days")){
-                timeList[i] = "" + (Integer.parseInt(temp[0]) * 24 + Integer.parseInt(temp[2]));
+                itemInfoList[i] = cpuList[i] + " - " + memoryList[i] + " - " + hard_driveList[i];
+                itemInfoList[i] = itemInfoList[i].substring(0, Math.min(itemInfoList[i].length(), 42));
+
+                auctions.put(auctionIDList[i], new Auction(auctionIDList[i], Double.parseDouble(bidList[i]), sellerList[i], buyerList[i], Integer.parseInt(timeList[i]), itemInfoList[i]));
+                auctionIDs.add(auctionIDList[i]);
             }
+            System.out.println("Auction data loaded successfully!");
 
-            itemInfoList[i] = cpuList[i] + " - " + memoryList[i] + " - " + hard_driveList[i];
-            itemInfoList[i] = itemInfoList[i].substring(0, Math.min(itemInfoList[i].length(), 42));
-
-            auctions.put(auctionIDList[i], new Auction(auctionIDList[i], Double.parseDouble(bidList[i]), sellerList[i], buyerList[i], Integer.parseInt(timeList[i]), itemInfoList[i]));
-            auctionIDs.add(auctionIDList[i]);
+            return new AuctionTable(auctions);
         }
-
-        return new AuctionTable(auctions);
-
+        catch(DataSourceException e){
+            throw new IllegalArgumentException(URL + " does not exist or could not be read.");
+        }
     }
 
 
@@ -68,11 +69,25 @@ public class AuctionTable implements Serializable{
             throw new IllegalArgumentException("Time cannot be negative.");
         }
 
+        System.out.println("Time passing...");
+        
+        for(int i = 0; i < auctionIDs.size(); i++){
+            getAuction(auctionIDs.get(i)).decrementTimeRemaining(numHours);
+        }
 
     }
 
     public void removeExpiredAuctions(){
-        return;
+        System.out.println("Removing expired auctions...");
+        for(int i = 0; i < auctionIDs.size(); i++){
+            Auction auction = getAuction(auctionIDs.get(i));
+            if(auction.getTimeRemaining() == 0){
+                auctions.remove(auctionIDs.get(i));
+                auctionIDs.remove(i);
+                i--;
+            }
+        }
+        System.out.println("All expired Auctions removed.");
     }
 
     public void printTable(){

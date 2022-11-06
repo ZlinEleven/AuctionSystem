@@ -57,10 +57,18 @@ public class Auction implements Serializable{
         if(bidAmt > currentBid){
             currentBid = bidAmt;
             buyerName = bidderName;
+            System.out.println("Bid accepted.");
+        }
+        else{
+            System.out.println("Bid rejected.");
         }
     }
 
     public String toString(){
-        return String.format("%-12s%3s%9s%2s%-23s%1s%-24s%1s%10s%2s%2s", "  " + auctionID, "|  $", String.format("%,.2f", currentBid), "|", " " + sellerName, "|", " " + buyerName, "|", " " + timeRemaining + " hours", "|", " " + itemInfo.substring(0, Math.min(itemInfo.length(), 43)));
+        String bid = "";
+        if(currentBid > 0){
+            bid = String.format("%,.2f", currentBid);
+        }
+        return String.format("%-12s%3s%9s%2s%-23s%1s%-24s%1s%10s%2s%2s", "  " + auctionID, "|  $", bid, "|", " " + sellerName, "|", " " + buyerName, "|", " " + timeRemaining + " hours", "|", " " + itemInfo.substring(0, Math.min(itemInfo.length(), 43)));
     }
 }

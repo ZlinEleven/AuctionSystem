@@ -1,19 +1,40 @@
-
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Scanner;
 
-public class AuctionSystem {
+public class AuctionSystem implements Serializable{
     private static AuctionTable auctionTable;
     private static String username;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         Scanner scan = new Scanner(System.in);
+        FileOutputStream file = new FileOutputStream("auction.obj");
+        ObjectOutputStream outStream = new ObjectOutputStream(file);
         
         String menu = "Menu:\n    (D) - Import Data from URL\n    (A) - Create a New Auction\n" +
                             "    (B) - Bid on an Item\n    (I) - Get Info on Auction\n" +
                             "    (P) - Print All Auctions\n    (R) - Remove Expired Auctions\n" +
                             "    (T) - Let Time Pass\n    (Q) - Quit";
         
-        System.out.println("Starting...\nNo previous auction table detected.\nCreating new table...");
+        System.out.println("Starting...");
+
+        try{
+            FileInputStream infile = new FileInputStream("auction.obj");
+            ObjectInputStream inStream = new ObjectInputStream(infile);
+            auctionTable = (AuctionTable) inStream.readObject();
+            System.out.println("Loading previous Auction Table...");
+        }
+        catch(ClassNotFoundException e){
+            System.out.println("No previous auction table detected.\nCreating new table...");
+        }
+        // catch(EOFException e){
+        //     System.out.println("No previous auction table detected.\nCreating new table...");
+        // }
+        
         System.out.print("\nPlease select a username: ");
         username = scan.nextLine();
 
@@ -28,9 +49,26 @@ public class AuctionSystem {
                 String url = scan.nextLine();
 
                 System.out.println("\nLoading...");
-                auctionTable = AuctionTable.buildFromURL(url);
-            
-                System.out.println("Auction data loaded successfully!");
+                try{
+                    auctionTable = AuctionTable.buildFromURL(url);
+                }
+                catch(IllegalArgumentException e){
+                    System.out.println(e.getMessage());
+                }        
+            }
+
+            else if(selection.toUpperCase().equals("A")){
+                System.out.println();
+                System.out.println("Creating new auction as " + username + ".");
+                System.out.print("Please enter an Auction ID: ");
+                String id = scan.nextLine();
+                System.out.print("Please enter an Auction time (hours): ");
+                int time = Integer.parseInt(scan.nextLine());
+                System.out.print("Please enter some Item Info: ");
+                String info = scan.nextLine();
+
+                auctionTable.putAuction(id, new Auction(id, 0, username, "", time, info));
+                System.out.println("\nAuction " + id + " inserted into table.");
             }
 
             else if(selection.toUpperCase().equals("B")){
@@ -60,7 +98,6 @@ public class AuctionSystem {
                         } catch (ClosedAuctionException e) {
                             System.out.println(e.getMessage());
                         }
-                        System.out.println("Bid accepted.");
                     }
                 }
                 else{
@@ -69,19 +106,45 @@ public class AuctionSystem {
                     System.out.println();
                     System.out.println("You can no longer bid on this item.");
                 }
+            }
 
+            else if(selection.toUpperCase().equals("I")){
+                System.out.print("Please enter an Auction ID: ");
+                String id = scan.nextLine();
+                System.out.println();
+                Auction auction = auctionTable.getAuction(id);
+                if(auction == null){
+                    System.out.println("Auction "+ id + " could not be found.");
+                }
+                else{
+                    System.out.println("Auction " + id + ":");
+                    System.out.println("Seller:" + auction.getSellerName());
+                    System.out.println("Buyer: " + auction.getBuyerName());
+                    System.out.println("Time: " + auction.getTimeRemaining() + " hours");
+                    System.out.println("Info: " + auction.getItemInfo());
+                }
             }
 
             else if(selection.toUpperCase().equals("P")){
                 auctionTable.printTable();
             }
 
+            else if(selection.toUpperCase().equals("R")){
+                
+            }
+
             System.out.println();
             System.out.println(menu);
             System.out.println();
-            System.out.print("Please select and option: ");
+            System.out.print("Please select an option: ");
             selection = scan.nextLine();
         }
-    
+
+        System.out.println("\nWriting Auction Table to file...");
+        outStream.writeObject(auctionTable);
+        System.out.println("Done!\n\nGoodbye.\n");
+
+        scan.close();
+        outStream.close();
     }
 }
