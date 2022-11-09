@@ -1,19 +1,14 @@
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.Scanner;
 
-public class AuctionSystem implements Serializable{
+public class AuctionSystem{
     private static AuctionTable auctionTable;
     private static String username;
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        Scanner scan = new Scanner(System.in);
+    public static void main(String[] args) throws IOException, ClassNotFoundException{
         FileOutputStream file = new FileOutputStream("auction.obj");
         ObjectOutputStream outStream = new ObjectOutputStream(file);
+        Scanner scan = new Scanner(System.in);
         
         String menu = "Menu:\n    (D) - Import Data from URL\n    (A) - Create a New Auction\n" +
                             "    (B) - Bid on an Item\n    (I) - Get Info on Auction\n" +
@@ -26,14 +21,19 @@ public class AuctionSystem implements Serializable{
             FileInputStream infile = new FileInputStream("auction.obj");
             ObjectInputStream inStream = new ObjectInputStream(infile);
             auctionTable = (AuctionTable) inStream.readObject();
+            auctionTable.printTable();
             System.out.println("Loading previous Auction Table...");
+
+            inStream.close();
         }
         catch(ClassNotFoundException e){
+            e.printStackTrace();
             System.out.println("No previous auction table detected.\nCreating new table...");
         }
-        // catch(EOFException e){
-        //     System.out.println("No previous auction table detected.\nCreating new table...");
-        // }
+        catch(EOFException e){
+            // e.printStackTrace();
+            System.out.println("No previous auction table detected.\nCreating new table...");
+        }
         
         System.out.print("\nPlease select a username: ");
         username = scan.nextLine();
@@ -75,36 +75,41 @@ public class AuctionSystem implements Serializable{
                 System.out.print("Please enter an Auction ID: ");
                 String id = scan.nextLine();
 
-                Auction auction = auctionTable.getAuction(id);
-
-                System.out.println();
-                System.out.print("Auction " + id + " is ");
-                if(auction.getTimeRemaining() > 0){
-                    System.out.println("OPEN");
-                    System.out.print("    Current bid: ");
-                    if(auction.getCurrentBid() == 0){
-                        System.out.println("None");
-                    }
-                    else{
-                        System.out.println("$ " + String.format("%.2f", auction.getCurrentBid()));
-                    }
+                try{
+                    Auction auction = auctionTable.getAuction(id);
 
                     System.out.println();
-                    System.out.print("What would you like to bid?: ");
-                    double bid = Double.parseDouble(scan.nextLine());
-                    if(bid > auction.getCurrentBid()){
-                        try {
-                            auction.newBid(username, bid);
-                        } catch (ClosedAuctionException e) {
-                            System.out.println(e.getMessage());
+                    System.out.print("Auction " + id + " is ");
+                    if(auction.getTimeRemaining() > 0){
+                        System.out.println("OPEN");
+                        System.out.print("    Current bid: ");
+                        if(auction.getCurrentBid() == 0){
+                            System.out.println("None");
+                        }
+                        else{
+                            System.out.println("$ " + String.format("%.2f", auction.getCurrentBid()));
+                        }
+
+                        System.out.println();
+                        System.out.print("What would you like to bid?: ");
+                        double bid = Double.parseDouble(scan.nextLine());
+                        if(bid > auction.getCurrentBid()){
+                            try {
+                                auction.newBid(username, bid);
+                            } catch (ClosedAuctionException e) {
+                                System.out.println(e.getMessage());
+                            }
                         }
                     }
+                    else{
+                        System.out.println("CLOSED");
+                        System.out.println("    Current bid: None");
+                        System.out.println();
+                        System.out.println("You can no longer bid on this item.");
+                    }
                 }
-                else{
-                    System.out.println("CLOSED");
-                    System.out.println("    Current bid: None");
-                    System.out.println();
-                    System.out.println("You can no longer bid on this item.");
+                catch(NullPointerException e){
+                    System.out.println(e.getMessage());
                 }
             }
 
@@ -118,19 +123,29 @@ public class AuctionSystem implements Serializable{
                 }
                 else{
                     System.out.println("Auction " + id + ":");
-                    System.out.println("Seller:" + auction.getSellerName());
-                    System.out.println("Buyer: " + auction.getBuyerName());
-                    System.out.println("Time: " + auction.getTimeRemaining() + " hours");
-                    System.out.println("Info: " + auction.getItemInfo());
+                    System.out.println("    Seller: " + auction.getSellerName());
+                    System.out.println("    Buyer: " + auction.getBuyerName());
+                    System.out.println("    Time: " + auction.getTimeRemaining() + " hours");
+                    System.out.println("    Info: " + auction.getItemInfo());
                 }
             }
 
             else if(selection.toUpperCase().equals("P")){
+                System.out.println();
                 auctionTable.printTable();
             }
 
             else if(selection.toUpperCase().equals("R")){
-                
+                System.out.println();
+                auctionTable.removeExpiredAuctions();
+            }
+
+            else if(selection.toUpperCase().equals("T")){
+                System.out.print("How many hours should pass: ");
+                int time = Integer.parseInt(scan.nextLine());
+                System.out.println();
+
+                auctionTable.letTimePass(time);
             }
 
             System.out.println();

@@ -37,7 +37,6 @@ public class AuctionTable implements Serializable{
                 }
 
                 itemInfoList[i] = cpuList[i] + " - " + memoryList[i] + " - " + hard_driveList[i];
-                itemInfoList[i] = itemInfoList[i].substring(0, Math.min(itemInfoList[i].length(), 42));
 
                 auctions.put(auctionIDList[i], new Auction(auctionIDList[i], Double.parseDouble(bidList[i]), sellerList[i], buyerList[i], Integer.parseInt(timeList[i]), itemInfoList[i]));
                 auctionIDs.add(auctionIDList[i]);
@@ -60,7 +59,10 @@ public class AuctionTable implements Serializable{
         auctionIDs.add(auctionID);
     }
 
-    public Auction getAuction(String auctionID){
+    public Auction getAuction(String auctionID) throws NullPointerException{
+        if(auctions.get(auctionID) == null){
+            throw new NullPointerException("ERROR: Auction " + auctionID + " does not exist.");
+        }
         return auctions.get(auctionID);
     }
 
@@ -74,7 +76,7 @@ public class AuctionTable implements Serializable{
         for(int i = 0; i < auctionIDs.size(); i++){
             getAuction(auctionIDs.get(i)).decrementTimeRemaining(numHours);
         }
-
+        System.out.println("Auction times updated.");
     }
 
     public void removeExpiredAuctions(){
