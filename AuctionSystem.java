@@ -1,13 +1,16 @@
 import java.io.*;
 import java.util.Scanner;
 
+/**
+ * This class contains the main method which is a menu driven application.
+ * This program promts the user for commands that interacts with an AuctionTable
+ * object. The user can also input "Q" to termiante the program. 
+ */
 public class AuctionSystem{
     private static AuctionTable auctionTable;
     private static String username;
 
     public static void main(String[] args) throws IOException, ClassNotFoundException{
-        FileOutputStream file = new FileOutputStream("auction.obj");
-        ObjectOutputStream outStream = new ObjectOutputStream(file);
         Scanner scan = new Scanner(System.in);
         
         String menu = "Menu:\n    (D) - Import Data from URL\n    (A) - Create a New Auction\n" +
@@ -17,23 +20,23 @@ public class AuctionSystem{
         
         System.out.println("Starting...");
 
-        try{
-            FileInputStream infile = new FileInputStream("auction.obj");
-            ObjectInputStream inStream = new ObjectInputStream(infile);
-            auctionTable = (AuctionTable) inStream.readObject();
-            auctionTable.printTable();
-            System.out.println("Loading previous Auction Table...");
+        try {
+			FileInputStream infile = new FileInputStream("auction.obj");
+			ObjectInputStream inStream = new ObjectInputStream(infile);
 
-            inStream.close();
-        }
-        catch(ClassNotFoundException e){
-            e.printStackTrace();
-            System.out.println("No previous auction table detected.\nCreating new table...");
-        }
-        catch(EOFException e){
-            // e.printStackTrace();
-            System.out.println("No previous auction table detected.\nCreating new table...");
-        }
+			auctionTable = (AuctionTable) inStream.readObject();
+            System.out.println("Loading previous Auction Table...");
+			infile.close();
+			inStream.close();
+		} 
+        catch (IOException e) {
+			System.out.println("No previous auction table detected.\nCreating new table...");
+			auctionTable = new AuctionTable();
+		}
+        catch (ClassNotFoundException e) {
+			System.out.println("No previous auction table detected.\nCreating new table...");
+			auctionTable = new AuctionTable();
+		}
         
         System.out.print("\nPlease select a username: ");
         username = scan.nextLine();
@@ -103,7 +106,13 @@ public class AuctionSystem{
                     }
                     else{
                         System.out.println("CLOSED");
-                        System.out.println("    Current bid: None");
+                        System.out.print("    Current bid: ");
+                        if(auction.getCurrentBid() == 0){
+                            System.out.println("None");
+                        }
+                        else{
+                            System.out.println("$ " + String.format("%.2f", auction.getCurrentBid()));
+                        }
                         System.out.println();
                         System.out.println("You can no longer bid on this item.");
                     }
@@ -156,10 +165,20 @@ public class AuctionSystem{
         }
 
         System.out.println("\nWriting Auction Table to file...");
+
+        File f = new File("auction.obj");
+        f.createNewFile();
+        FileOutputStream file = new FileOutputStream("auction.obj");
+        ObjectOutputStream outStream = new ObjectOutputStream(file);
         outStream.writeObject(auctionTable);
+        // auctionTable.printTable();
+
         System.out.println("Done!\n\nGoodbye.\n");
 
         scan.close();
+        file.close();
         outStream.close();
+
+        System.exit(0);
     }
 }
