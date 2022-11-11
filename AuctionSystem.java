@@ -42,7 +42,9 @@ public class AuctionSystem{
         username = scan.nextLine();
 
 
-        System.out.println("\n" + menu + "\n\n");
+        System.out.println();
+        System.out.println(menu);
+        System.out.println();
         System.out.print("Please select an option: ");
         String selection = scan.nextLine();
         while(!selection.toUpperCase().equals("Q")){
@@ -95,12 +97,18 @@ public class AuctionSystem{
 
                         System.out.println();
                         System.out.print("What would you like to bid?: ");
-                        double bid = Double.parseDouble(scan.nextLine());
-                        if(bid > auction.getCurrentBid()){
-                            try {
-                                auction.newBid(username, bid);
-                            } catch (ClosedAuctionException e) {
-                                System.out.println(e.getMessage());
+                        String bid = scan.nextLine();
+                        if(bid.isBlank()){
+                            System.out.println("Bid was not accepted.");
+                        }
+                        else{
+                            double newbid = Double.parseDouble(bid);
+                            if(newbid > auction.getCurrentBid()){
+                                try {
+                                    auction.newBid(username, newbid);
+                                } catch (ClosedAuctionException e) {
+                                    System.out.println(e.getMessage());
+                                }
                             }
                         }
                     }
@@ -171,7 +179,6 @@ public class AuctionSystem{
         FileOutputStream file = new FileOutputStream("auction.obj");
         ObjectOutputStream outStream = new ObjectOutputStream(file);
         outStream.writeObject(auctionTable);
-        // auctionTable.printTable();
 
         System.out.println("Done!\n\nGoodbye.\n");
 

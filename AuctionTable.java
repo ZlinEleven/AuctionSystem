@@ -145,7 +145,7 @@ public class AuctionTable extends HashMap<String, Auction> implements Serializab
         ArrayList<Auction> auctionSet = new ArrayList<Auction>(20);
         for (Auction auction : values()) {
             int index = 0;
-            while(index < auctionSet.size() && auction.getTimeRemaining() < auctionSet.get(index).getTimeRemaining()){
+            while(index < auctionSet.size() && auction.getTimeRemaining() <= auctionSet.get(index).getTimeRemaining()){
                 index++;
             }
             auctionSet.add(index, auction);
