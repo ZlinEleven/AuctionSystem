@@ -55,7 +55,7 @@ public class AuctionSystem{
 
                 System.out.println("\nLoading...");
                 try{
-                    auctionTable = AuctionTable.buildFromURL(url);
+                    auctionTable.copyAuctions(AuctionTable.buildFromURL(url));
                 }
                 catch(IllegalArgumentException e){
                     System.out.println(e.getMessage());

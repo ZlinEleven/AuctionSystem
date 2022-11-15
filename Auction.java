@@ -105,7 +105,7 @@ public class Auction implements Serializable{
             System.out.println("Bid accepted.");
         }
         else{
-            System.out.println("Bid rejected.");
+            System.out.println("bid was not accepted.");
         }
     }
 

@@ -1,12 +1,6 @@
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.SortedSet;
 
 import big.data.*;
 
@@ -48,11 +42,17 @@ public class AuctionTable extends HashMap<String, Auction> implements Serializab
 
             for(int i = 0; i < memoryList.length; i++){
                 bidList[i] = bidList[i].replaceAll("[$,]", "");
+                sellerList[i] = sellerList[i].replaceAll("[\r\n]", "");
                 buyerList[i] = buyerList[i].trim();
 
                 String[] temp = timeList[i].split(" ");
-                if(temp[1].contains("days")){
-                    timeList[i] = "" + (Integer.parseInt(temp[0]) * 24 + Integer.parseInt(temp[2]));
+                if(temp[1].contains("day")){
+                    timeList[i] = "" + (Integer.parseInt(temp[0]) * 24);
+                    if(temp.length > 2)
+                        timeList[i] = "" + (Integer.parseInt(timeList[i]) + Integer.parseInt(temp[2]));
+                }
+                else{
+                    timeList[i] = temp[0];
                 }
 
                 itemInfoList[i] = cpuList[i] + " - " + memoryList[i] + " - " + hard_driveList[i];
@@ -60,13 +60,14 @@ public class AuctionTable extends HashMap<String, Auction> implements Serializab
                 auctions.put(auctionIDList[i], new Auction(auctionIDList[i], Double.parseDouble(bidList[i]), sellerList[i], buyerList[i], Integer.parseInt(timeList[i]), itemInfoList[i]));
             }
             System.out.println("Auction data loaded successfully!");
-
             return auctions;
         }
         catch(DataSourceException e){
             throw new IllegalArgumentException(URL + " does not exist or could not be read.");
         }
     }
+
+    
 
     /**
      * Manually stores an auction to auctions (the hashMap containing the auctions)
@@ -76,9 +77,20 @@ public class AuctionTable extends HashMap<String, Auction> implements Serializab
      */
     public void putAuction(String auctionID, Auction auction) throws IllegalArgumentException {
         if(containsKey(auctionID)){
-            throw new IllegalArgumentException("Auction with the same ID is already stored in the table.");
+            throw new IllegalArgumentException("Auction with ID " + auctionID + " is already stored in the table.");
         }
         put(auctionID, auction);
+    }
+
+    public void copyAuctions(AuctionTable at){
+        for(String id : at.keySet()){
+            try{
+                putAuction(id, at.getAuction(id));
+            }
+            catch(IllegalArgumentException e){
+                System.out.println(e.getMessage());
+            }
+        }
     }
 
     /**
@@ -120,11 +132,9 @@ public class AuctionTable extends HashMap<String, Auction> implements Serializab
         
         ArrayList<String> removeList = new ArrayList<String>();
         
-        int count = 0;
         for(Auction auction : values()){
             if(auction.getTimeRemaining() == 0){
                 removeList.add(auction.getAuctionID());
-                count++;
             }
         }
 
@@ -140,12 +150,15 @@ public class AuctionTable extends HashMap<String, Auction> implements Serializab
         System.out.println(String.format("%2s%2s%10s%4s%14s%10s%15s%10s%8s%4s%11s", " Auction ID", "|", "Bid", "|", "Seller", "|", "Buyer", "|", "Time", "|", "Item Info"));
         System.out.println("===================================================================================================================================");
 
-        Collection<Auction> auctions = values();
-
         ArrayList<Auction> auctionSet = new ArrayList<Auction>(20);
         for (Auction auction : values()) {
             int index = 0;
             while(index < auctionSet.size() && auction.getTimeRemaining() <= auctionSet.get(index).getTimeRemaining()){
+                if(auction.getTimeRemaining() == auctionSet.get(index).getTimeRemaining()){
+                    if(Integer.parseInt(auction.getAuctionID()) > Integer.parseInt(auctionSet.get(index).getAuctionID())){
+                        break;
+                    }
+                }
                 index++;
             }
             auctionSet.add(index, auction);
