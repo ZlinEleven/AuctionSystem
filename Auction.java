@@ -1,5 +1,3 @@
-/*Zhenbin Lin, 114866923, Recitation 04 */
-
 import java.io.Serializable;
 
 /**
